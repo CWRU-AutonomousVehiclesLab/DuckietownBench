@@ -1,5 +1,6 @@
 import tensorflow as tf
-from frankModel import FrankNet  # The model we are gonna use to train
+#from frankModel import FrankNet  #supposedly tensorcore optimized
+from frankModel_ts import FrankNet  # The model we are gonna use to train
 from benchmark import TimeRecorder
 from benchmark import sysInfo
 from logReader import Reader
