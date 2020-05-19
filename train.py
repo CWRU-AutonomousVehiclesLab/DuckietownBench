@@ -1,16 +1,19 @@
 import tensorflow as tf
 from frankModel import FrankNet  # The model we are gonna use to train
+from benchmark import TimeRecorder
+from benchmark import sysInfo
 from logReader import Reader
 from sklearn.model_selection import train_test_split
+from keras_tqdm import TQDMCallback
 import time
 import numpy as np
 import os
 
 
 #! Training Configuration
-EPOCHS = 1000000 #EPOCHS
+EPOCHS = 10 #EPOCHS
 INIT_LR = 1e-3   #LEARNING RATE
-BS = 8          #Batch Size 
+BS = 32        #Batch Size 
 GPU_COUNT = 1    # Change this value if you are using multiple GPUs
 MULTI_GPU = False #Change this to enable multi-GPU
 
@@ -23,6 +26,7 @@ observation = []
 linear = []
 angular = []
 
+sysInfo()
 
 def load_data():
     global observation, linear, angular
@@ -60,15 +64,6 @@ def r_square(y_true, y_pred):
 
 
 #!================================================================
-# 0. Create directories
-try:
-    os.makedirs("trainedModel")
-except FileExistsError:
-    print("Directory already exists!")
-except OSError:
-    print("Create folder for trained model failed. Please check system permissions.")
-    exit()    
-
 # 1. Load all the datas
 load_data()
 print('Load all complete')
@@ -105,22 +100,9 @@ else:
 model.compile(optimizer=opt, loss=losses, loss_weights=lossWeights,
               metrics=metrics_list)
 
-# 9. Setup tensorboard
-tensorboard = tf.keras.callbacks.TensorBoard(
-    log_dir='logs/{}'.format(time.ctime()))
+bencher = TimeRecorder()
 
-# 10. checkpoint
-#? Keep track of the best validation loss model
-filepath1 = "trainedModel/FrankNetBest_Validation.h5"
-checkpoint1 = tf.keras.callbacks.ModelCheckpoint(
-    filepath1, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-
-#? Keep track of the best loss model
-filepath2 = "trainedModel/FrankNetBest_Loss.h5"
-checkpoint2 = tf.keras.callbacks.ModelCheckpoint(
-    filepath2, monitor='loss', verbose=1, save_best_only=True, mode='min')
-
-callbacks_list = [checkpoint1, checkpoint2, tensorboard]
+callbacks_list = [TQDMCallback(),bencher]
 
 # 11. GO!
 history = model.fit(observation_train,
@@ -129,4 +111,5 @@ history = model.fit(observation_train,
                             "Linear": linear_valid, "Angular": angular_valid}),
                     epochs=EPOCHS, callbacks=callbacks_list, verbose=1)
 
-model.save('trainedModel/FrankNet.h5')
+# 12. Write benchmark results
+bencher.write_result()
