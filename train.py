@@ -4,7 +4,6 @@ from benchmark import TimeRecorder
 from benchmark import sysInfo
 from logReader import Reader
 from sklearn.model_selection import train_test_split
-from keras_tqdm import TQDMCallback
 import time
 import numpy as np
 import os
@@ -102,7 +101,7 @@ model.compile(optimizer=opt, loss=losses, loss_weights=lossWeights,
 
 bencher = TimeRecorder()
 
-callbacks_list = [TQDMCallback(),bencher]
+callbacks_list = [bencher]
 
 # 11. GO!
 history = model.fit(observation_train,
